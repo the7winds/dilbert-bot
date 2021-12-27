@@ -6,13 +6,19 @@ pub struct SearchResult {
     pub page: url::Url,
 }
 
+fn get_keywords(raw: &str) -> Vec<&str> {
+    raw.split(char::is_whitespace)
+        .filter(|w| !w.is_empty())
+        .collect()
+}
+
 pub async fn search_image(request: &str) -> anyhow::Result<Vec<SearchResult>> {
-    let keywords = request.split(" ").collect::<Vec<&str>>();
+    let keywords = get_keywords(request);
     if keywords.is_empty() {
         return Ok(Vec::default());
     }
 
-    log::info!("Search request: {}", request);
+    log::info!("Search request: '{}'", request);
 
     let https = hyper_tls::HttpsConnector::new();
     let client = hyper::Client::builder().build::<_, hyper::Body>(https);
