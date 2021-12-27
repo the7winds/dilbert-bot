@@ -5,6 +5,8 @@ use teloxide::prelude::{
 use teloxide::utils::command::BotCommand;
 use teloxide::Bot;
 
+mod dilbert_search;
+
 const BOTNAME: &'static str = "dilbert";
 
 #[derive(BotCommand)]
@@ -27,8 +29,14 @@ async fn process_message(cx: UpdateWithCx<AutoSend<Bot>, Message>) -> anyhow::Re
                     cx.answer(DilbertCommand::descriptions()).await?;
                 }
                 DilbertCommand::Search(request) => {
-                    cx.answer(format!("You have requested: {}", request))
-                        .await?;
+                    let search_results = dilbert_search::search_image(request.as_str()).await?;
+                    if search_results.is_empty() {
+                        cx.answer("Nothing to be found.").await?;
+                    } else {
+                        for result in search_results.iter() {
+                            cx.answer(result.page.as_str()).await?;
+                        }
+                    }
                 }
             }
             Ok(())
