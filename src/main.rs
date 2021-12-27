@@ -93,8 +93,7 @@ async fn inline_queries_handler(rx: DispatcherHandlerRx<AutoSend<Bot>, InlineQue
         .await;
 }
 
-#[tokio::main]
-async fn main() {
+async fn run() {
     env_logger::init();
     log::info!("Starting dilbert...");
 
@@ -104,4 +103,10 @@ async fn main() {
         .inline_queries_handler(inline_queries_handler)
         .dispatch()
         .await;
+}
+
+#[tokio::main]
+async fn main() {
+    // According to teloxide, it's better to split main because of tokio
+    run().await;
 }
