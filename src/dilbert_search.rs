@@ -7,17 +7,21 @@ pub struct SearchResult {
 }
 
 pub async fn search_image(request: &str) -> anyhow::Result<Vec<SearchResult>> {
+    let keywords = request.split(" ").collect::<Vec<&str>>();
+    if keywords.is_empty() {
+        return Ok(Vec::default());
+    }
+
+    log::info!("Search request: {}", request);
+
     let https = hyper_tls::HttpsConnector::new();
     let client = hyper::Client::builder().build::<_, hyper::Body>(https);
 
-    let request_uri = {
-        let keywords = request.split(" ").collect::<Vec<&str>>();
-        format!(
-            "https://dilbert.com/search_results?terms={}",
-            keywords.join("+")
-        )
-        .parse()?
-    };
+    let request_uri = format!(
+        "https://dilbert.com/search_results?terms={}",
+        keywords.join("+")
+    )
+    .parse()?;
 
     let mut resp = client.get(request_uri).await?;
     process_search_image_response(&mut resp).await
@@ -27,6 +31,10 @@ async fn process_search_image_response(
     resp: &mut Response<Body>,
 ) -> anyhow::Result<Vec<SearchResult>> {
     if !resp.status().is_success() {
+        log::warn!(
+            "Can't process search response. Status: {}",
+            resp.status().as_str()
+        );
         return Ok(Vec::default());
     }
 
@@ -62,6 +70,9 @@ async fn process_search_image_response(
                 None
             }
         })
-        .collect();
+        .collect::<Vec<SearchResult>>();
+
+    log::info!("Search found {} images.", search_results.len());
+
     Ok(search_results)
 }
