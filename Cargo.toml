@@ -8,8 +8,8 @@ edition = "2021"
 [dependencies]
 log = "0.4.8"
 env_logger = "0.9.0"
-teloxide = { version = "0.4", features = ["auto-send", "macros"] }
-tokio = { version =  "1.3", features = ["rt-multi-thread", "macros"] }
+teloxide = { version = "0.5", features = ["auto-send", "macros"] }
+tokio = { version =  "1.8", features = ["rt-multi-thread", "macros"] }
 tokio-stream = "0.1.8"
 anyhow = "1.0.52"
 url = "2.2.2"

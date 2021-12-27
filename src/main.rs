@@ -1,9 +1,14 @@
+use std::time::Duration;
+
 use teloxide::prelude::{
     AutoSend, ChosenInlineResult, Dispatcher, DispatcherHandlerRx, InlineQuery, Message, OnError,
     RequesterExt, StreamExt, UpdateWithCx,
 };
+use teloxide::requests::Requester;
+use teloxide::types::{InlineQueryResult, InlineQueryResultPhoto};
 use teloxide::utils::command::BotCommand;
 use teloxide::Bot;
+use tokio_stream::wrappers::UnboundedReceiverStream;
 
 mod dilbert_search;
 
@@ -35,6 +40,8 @@ async fn process_message(cx: UpdateWithCx<AutoSend<Bot>, Message>) -> anyhow::Re
                     } else {
                         for result in search_results.iter() {
                             cx.answer(result.page.as_str()).await?;
+                            // FIXME: find a better solution.
+                            tokio::time::sleep(Duration::from_secs(1)).await;
                         }
                     }
                 }
@@ -45,18 +52,45 @@ async fn process_message(cx: UpdateWithCx<AutoSend<Bot>, Message>) -> anyhow::Re
 }
 
 async fn message_handler(rx: DispatcherHandlerRx<AutoSend<Bot>, Message>) {
-    tokio_stream::wrappers::UnboundedReceiverStream::new(rx)
+    UnboundedReceiverStream::new(rx)
         .for_each_concurrent(None, |cx| async move {
             process_message(cx).await.log_on_error().await;
         })
         .await;
 }
 
-async fn inline_queries_handler(_rx: DispatcherHandlerRx<AutoSend<Bot>, InlineQuery>) {}
+async fn process_inline_query(cx: UpdateWithCx<AutoSend<Bot>, InlineQuery>) -> anyhow::Result<()> {
+    let search_results = dilbert_search::search_image(cx.update.query.as_str()).await?;
+    cx.requester
+        .answer_inline_query(
+            cx.update.id,
+            search_results.iter().map(|r| {
+                InlineQueryResult::Photo(InlineQueryResultPhoto {
+                    id: r.image.to_string(),
+                    photo_url: r.image.to_string(),
+                    thumb_url: r.image.to_string(),
+                    photo_width: None,
+                    photo_height: None,
+                    title: None,
+                    description: None,
+                    caption: None,
+                    parse_mode: None,
+                    caption_entities: None,
+                    reply_markup: None,
+                    input_message_content: None,
+                })
+            }),
+        )
+        .await?;
+    Ok(())
+}
 
-async fn chosen_inline_results_handler(
-    _rx: DispatcherHandlerRx<AutoSend<Bot>, ChosenInlineResult>,
-) {
+async fn inline_queries_handler(rx: DispatcherHandlerRx<AutoSend<Bot>, InlineQuery>) {
+    UnboundedReceiverStream::new(rx)
+        .for_each_concurrent(None, |cx| async move {
+            process_inline_query(cx).await.log_on_error().await;
+        })
+        .await;
 }
 
 #[tokio::main]
@@ -68,7 +102,6 @@ async fn main() {
     Dispatcher::new(bot)
         .messages_handler(message_handler)
         .inline_queries_handler(inline_queries_handler)
-        .chosen_inline_results_handler(chosen_inline_results_handler)
         .dispatch()
         .await;
 }
