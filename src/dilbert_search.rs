@@ -1,5 +1,4 @@
 use anyhow::Context;
-use hyper::{Body, Response};
 
 pub struct SearchResult {
     pub image: url::Url,
@@ -20,32 +19,19 @@ pub async fn search_image(request: &str) -> anyhow::Result<Vec<SearchResult>> {
 
     log::info!("Search request: '{}'", request);
 
-    let https = hyper_tls::HttpsConnector::new();
-    let client = hyper::Client::builder().build::<_, hyper::Body>(https);
-
     let request_uri = format!(
         "https://dilbert.com/search_results?terms={}",
         keywords.join("+")
-    )
-    .parse()?;
+    );
 
-    let mut resp = client.get(request_uri).await?;
-    process_search_image_response(&mut resp).await
+    let resp = reqwest::get(request_uri).await?;
+    process_search_image_response(resp).await
 }
 
 async fn process_search_image_response(
-    resp: &mut Response<Body>,
+    resp: reqwest::Response,
 ) -> anyhow::Result<Vec<SearchResult>> {
-    if !resp.status().is_success() {
-        log::warn!(
-            "Can't process search response. Status: {}",
-            resp.status().as_str()
-        );
-        return Ok(Vec::default());
-    }
-
-    let body = resp.body_mut();
-    let body = String::from_utf8(hyper::body::to_bytes(body).await?.to_vec())?;
+    let body = resp.text().await?;
     let dom = scraper::Html::parse_document(body.as_str());
     let comic_container_selector = scraper::Selector::parse(".img-comic-container").unwrap();
     let comic_link_selector = scraper::selector::Selector::parse(".img-comic-link").unwrap();
