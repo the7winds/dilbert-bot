@@ -66,32 +66,28 @@ async fn message_handler(rx: DispatcherHandlerRx<AutoSend<Bot>, Message>) {
 async fn process_inline_query(cx: UpdateWithCx<AutoSend<Bot>, InlineQuery>) -> anyhow::Result<()> {
     log::info!("Has inline query.");
     let search_results = dilbert_search::search_image(cx.update.query.as_str()).await?;
-    if search_results.is_empty() {
-        log::info!("Nothing to be found.")
-    } else {
-        cx.requester
-            .answer_inline_query(
-                cx.update.id,
-                search_results.iter().map(|r| {
-                    InlineQueryResult::Photo(InlineQueryResultPhoto {
-                        id: r.image.to_string(),
-                        photo_url: r.image.to_string(),
-                        thumb_url: r.image.to_string(),
-                        photo_width: None,
-                        photo_height: None,
-                        title: None,
-                        description: None,
-                        caption: Some(format!("source: {}", r.page).to_string()),
-                        parse_mode: None,
-                        caption_entities: None,
-                        reply_markup: None,
-                        input_message_content: None,
-                    })
-                }),
-            )
-            .await?;
-        log::info!("Send {} URLs in response.", search_results.len());
-    }
+    cx.requester
+        .answer_inline_query(
+            cx.update.id,
+            search_results.iter().map(|r| {
+                InlineQueryResult::Photo(InlineQueryResultPhoto {
+                    id: r.image.to_string(),
+                    photo_url: r.image.to_string(),
+                    thumb_url: r.image.to_string(),
+                    photo_width: None,
+                    photo_height: None,
+                    title: None,
+                    description: None,
+                    caption: Some(format!("source: {}", r.page).to_string()),
+                    parse_mode: None,
+                    caption_entities: None,
+                    reply_markup: None,
+                    input_message_content: None,
+                })
+            }),
+        )
+        .await?;
+    log::info!("Send {} URLs in response.", search_results.len());
     Ok(())
 }
 
