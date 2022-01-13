@@ -10,7 +10,7 @@ use teloxide::utils::command::BotCommand;
 use teloxide::Bot;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
-mod dilbert_search;
+mod dilbert;
 
 const BOTNAME: &'static str = "dilbert";
 
@@ -36,7 +36,7 @@ async fn process_message(cx: UpdateWithCx<AutoSend<Bot>, Message>) -> anyhow::Re
                     log::info!("Send help info.");
                 }
                 DilbertCommand::Search(request) => {
-                    let search_results = dilbert_search::search_image(request.as_str()).await?;
+                    let search_results = dilbert::search::search_image(request.as_str()).await?;
                     if search_results.is_empty() {
                         cx.answer("Nothing to be found.").await?;
                         log::info!("Nothing to be found.");
@@ -65,7 +65,7 @@ async fn message_handler(rx: DispatcherHandlerRx<AutoSend<Bot>, Message>) {
 
 async fn process_inline_query(cx: UpdateWithCx<AutoSend<Bot>, InlineQuery>) -> anyhow::Result<()> {
     log::info!("Has inline query.");
-    let search_results = dilbert_search::search_image(cx.update.query.as_str()).await?;
+    let search_results = dilbert::search::search_image(cx.update.query.as_str()).await?;
     cx.requester
         .answer_inline_query(
             cx.update.id,
