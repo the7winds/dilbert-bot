@@ -9,20 +9,53 @@ pub struct SearchResult {
     pub page: url::Url,
 }
 
-pub async fn search_image(request: &str) -> anyhow::Result<Vec<SearchResult>> {
+pub struct SearchSettings {
+    use_cache: bool,
+}
+
+impl SearchSettings {
+    pub(crate) fn from_env() -> SearchSettings {
+        SearchSettings {
+            use_cache: match std::env::var("DILBERT_BOT_USE_CACHE") {
+                Ok(v) => v.parse::<bool>().unwrap_or_default(),
+                Err(_) => false,
+            },
+        }
+    }
+}
+
+pub async fn search_image(
+    request: &str,
+    settings: &SearchSettings,
+) -> anyhow::Result<Vec<SearchResult>> {
     log::info!("Search request: '{}'", request);
 
     let tags = request.parse_tags()?;
-    let tags_ref = &tags;
 
-    match search_image_in_cache(tags_ref) {
+    if settings.use_cache {
+        cached_search(&tags).await
+    } else {
+        non_cached_search(&tags).await
+    }
+}
+
+async fn cached_search(tags: &[Tag]) -> anyhow::Result<Vec<SearchResult>> {
+    match search_image_in_cache(tags) {
         ok @ Ok(_) => ok,
         Err(_) => {
-            let results = search_image_on_web(tags_ref).await?;
+            let results = search_image_on_web(tags).await?;
             cache_results(&results);
             Ok(results.into_iter().map(|res| res.search_result).collect())
         }
     }
+}
+
+async fn non_cached_search(tags: &[Tag]) -> anyhow::Result<Vec<SearchResult>> {
+    Ok(search_image_on_web(tags)
+        .await?
+        .into_iter()
+        .map(|r| r.search_result)
+        .collect())
 }
 
 fn search_image_in_cache(tags: &[Tag]) -> anyhow::Result<Vec<SearchResult>> {
