@@ -61,7 +61,7 @@ async fn non_cached_search(tags: &[Tag]) -> anyhow::Result<Vec<SearchResult>> {
 fn search_image_in_cache(tags: &[Tag]) -> anyhow::Result<Vec<SearchResult>> {
     log::info!("Try find in cache: '{:?}'", tags);
     let search_limit = 10;
-    let result_from_cache = DILBERT_CACHE.find(&tags, search_limit);
+    let result_from_cache = DILBERT_CACHE.find(tags, search_limit);
     log::info!("Found in cache: '{}'", result_from_cache.len());
 
     if result_from_cache.len() < search_limit / 2 {
@@ -113,13 +113,13 @@ async fn process_search_image_response(
                 .select(&comic_link_selector)
                 .next()
                 .and_then(|e| e.value().attr("href"))
-                .ok_or(anyhow::Error::msg("no href attr"))
+                .ok_or_else(|| anyhow::Error::msg("no href attr"))
                 .and_then(|e| url::Url::parse(e).context("Can't parse url"));
-            let img = e
+            let image = e
                 .select(&comic_selector)
                 .next()
                 .and_then(|e| e.value().attr("src"))
-                .ok_or(anyhow::Error::msg("no src attr"))
+                .ok_or_else(|| anyhow::Error::msg("no src attr"))
                 .and_then(|e| url::Url::parse(e).context("Can't parse url"));
             let tags = e
                 .select(&comic_tags_selector)
@@ -127,11 +127,8 @@ async fn process_search_image_response(
                 .flat_map(|maybe_tags| maybe_tags.unwrap_or_default())
                 .collect::<Vec<Tag>>();
 
-            if page.is_ok() && img.is_ok() && !tags.is_empty() {
-                let search_result = SearchResult {
-                    page: page.unwrap(),
-                    image: img.unwrap(),
-                };
+            if let (Ok(page), Ok(image), true) = (page, image, !tags.is_empty()) {
+                let search_result = SearchResult { page, image };
                 let result = FullSearchResult {
                     search_result,
                     tags,

@@ -14,7 +14,7 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 
 mod dilbert;
 
-const BOTNAME: &'static str = "dilbert";
+const BOTNAME: &str = "dilbert";
 
 #[derive(BotCommand, Debug)]
 #[command(rename = "lowercase", description = "These commands are supported:")]
@@ -90,7 +90,7 @@ async fn process_inline_query(
                     photo_height: None,
                     title: None,
                     description: None,
-                    caption: Some(format!("source: {}", r.page).to_string()),
+                    caption: Some(format!("source: {}", r.page)),
                     parse_mode: None,
                     caption_entities: None,
                     reply_markup: None,
