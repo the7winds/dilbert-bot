@@ -121,7 +121,9 @@ async fn run() {
     env_logger::init();
     log::info!("Starting dilbert...");
 
-    let bot = Bot::from_env().auto_send();
+    let token = std::env::var("DILBERT_BOT_TELEGRAM_BOT_TOKEN")
+        .expect("Set DILBERT_BOT_TELEGRAM_TOKEN environment variable.");
+    let bot = Bot::new(token).auto_send();
 
     let search_settings = Arc::new(SearchSettings::from_env());
 
