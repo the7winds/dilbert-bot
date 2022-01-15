@@ -1,4 +1,4 @@
-name: on-push
+name: Check
 on: [push]
 jobs: 
   build-and-test:
