@@ -123,7 +123,7 @@ async fn run() {
 
     let token_var_name = "DILBERT_BOT_TELEGRAM_TOKEN";
     let token = std::env::var(token_var_name)
-        .expect(format!("Set {} environment variable.", token_var_name).as_str());
+        .unwrap_or_else(|_| panic!("Set {} environment variable.", token_var_name));
     let bot = Bot::new(token).auto_send();
 
     let search_settings = Arc::new(SearchSettings::from_env());
