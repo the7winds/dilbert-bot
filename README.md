@@ -1,4 +1,4 @@
-[![build badge](https://img.shields.io/github/workflow/status/the7winds/dilbert-bot/on-push)](https://github.com/the7winds/dilbert-bot/actions)
+[![CI](https://github.com/the7winds/dilbert-bot/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/the7winds/dilbert-bot/actions/workflows/ci.yaml)
 [![use rust](https://img.shields.io/github/languages/top/the7winds/dilbert-bot)](https://www.rust-lang.org)
 [![try it in telegram](https://img.shields.io/badge/try%20it-in%20telegram-blue)](https://t.me/dilbertsearchbot)
 
