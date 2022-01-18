@@ -9,6 +9,7 @@ RUN cargo build --release
 FROM debian:bullseye-slim AS runtime
 WORKDIR /app
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
+        ca-certificates \
         openssl \
         # Clean up
         && apt-get autoremove -y \
